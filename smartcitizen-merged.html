@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCitizen - AI Powered Civic Issue Reporting</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: linear-gradient(135deg, #2c5f2d 0%, #1e3a1e 100%);
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-brand i {
+            margin-right: 0.5rem;
+            color: #97b498;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: #97b498;
+        }
+
+        .nav-auth, .nav-user {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary, .btn-login, .btn-register, .btn-logout, .btn-submit, .btn-ai, .btn-quick {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+        }
+
+        .btn-quick {
+            background: #17a2b8;
+            color: white;
+            flex: 1;
+            margin-right: 0.5rem;
+        }
+
+        .btn-submit {
+            background: #007bff;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-ai {
+            background: #ff6b35;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+            padding: 120px 0 60px;
+            min-height: 100vh;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Home Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            color: #2c5f2d;
+            margin-bottom: 1rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            color: #777;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card i {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            color: #2c5f2d;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Forms */
+        .report-container, .dashboard-content, .authority-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Photo Upload */
+        .photo-upload, .voice-input, .location-input {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .photo-upload input[type="file"] {
+            display: none;
+        }
+
+        .photo-upload button, .voice-input button, .location-input button {
+            padding: 0.75rem 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #photoPreview, #voicePreview {
+            margin-top: 1rem;
+        }
+
+        #photoPreview img {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        /* Voice Recording States */
+        .voice-recording {
+            background: #dc3545 !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        /* Notifications */
+        .notification-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 3000;
+        }
+
+        .notification {
+            background: #4CAF50;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .photo-upload, .voice-input, .location-input {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+                padding: 1.5rem;
+            }
+
+            .section {
+                padding: 100px 0 40px;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-city"></i>
+                <span>SmartCitizen</span>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <a class="nav-link" onclick="showSection('home')">Home</a>
+                <a class="nav-link" onclick="showSection('report')">Report Issue</a>
+                <a class="nav-link" onclick="showSection('map')">Map</a>
+                <a class="nav-link" onclick="showSection('dashboard')">Dashboard</a>
+                <a class="nav-link" id="authorityLink" style="display: none;" onclick="showSection('authority')">Authority</a>
+                <div class="nav-auth" id="authButtons">
+                    <button class="btn-login" onclick="showLogin()">Login</button>
+                    <button class="btn-register" onclick="showRegister()">Register</button>
+                </div>
+                <div class="nav-user" id="userInfo" style="display: none;">
+                    <span id="userGreeting"></span>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section active">
+        <div class="container">
+            <div class="hero">
+                <h1>SmartCitizen</h1>
+                <p class="hero-subtitle">AI-Powered Civic Issue Reporting Platform</p>
+                <p class="hero-description">Report civic issues in your community with AI assistance. Get quick responses from authorities and earn rewards for active participation.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="showSection('report')">Report an Issue</button>
+                    <button class="btn-secondary" onclick="showSection('map')">View Issues Map</button>
+                </div>
+            </div>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 id="totalReports">0</h3>
+                    <p>Total Reports</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-circle"></i>
+                    <h3 id="resolvedReports">0</h3>
+                    <p>Resolved</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h3 id="activeUsers">0</h3>
+                    <p>Active Citizens</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Report Issue Section -->
+    <section id="report" class="section">
+        <div class="container">
+            <h2>Report a Civic Issue</h2>
+            <div class="report-container">
+                <div class="report-form">
+                    <div class="form-group">
+                        <label>Issue Category</label>
+                        <select id="issueCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="road">Road & Infrastructure</option>
+                            <option value="water">Water & Drainage</option>
+                            <option value="electricity">Electricity</option>
+                            <option value="garbage">Garbage & Sanitation</option>
+                            <option value="traffic">Traffic & Parking</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Add Photo of Issue</label>
+                        <div class="photo-upload">
+                            <input type="file" id="photoInput" accept="image/*" capture="environment">
+                            <button type="button" onclick="document.getElementById('photoInput').click()">
+                                <i class="fas fa-camera"></i> Take Photo
+                            </button>
+                            <div id="photoPreview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Voice Description (Optional)</label>
+                        <div class="voice-input">
+                            <button type="button" id="voiceBtn" onclick="toggleVoiceRecording()">
+                                <i class="fas fa-microphone"></i> <span id="voiceStatus">Start Recording</span>
+                            </button>
+                            <div id="voicePreview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Issue Description</label>
+                        <textarea id="issueDescription" placeholder="Describe the issue or let AI generate description from photo/voice..." rows="4"></textarea>
+                        <button type="button" class="btn-ai" onclick="generateAIDescription()">
+                            <i class="fas fa-robot"></i> AI Auto-Description
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div class="location-input">
+                            <input type="text" id="locationText" placeholder="Location will be auto-detected..." readonly>
+                            <button type="button" onclick="getCurrentLocation()">
+                                <i class="fas fa-location-arrow"></i> Get Location
+                            </button>
+                        </div>
+                        <div id="locationMap" style="height: 200px; margin-top: 10px;"></div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button type="button" class="btn-quick" onclick="quickSubmit()">
+                            <i class="fas fa-bolt"></i> Quick Submit (Auto-fill)
+                        </button>
+                        <button type="button" class="btn-submit" onclick="submitIssue()">
+                            <i class="fas fa-paper-plane"></i> Submit Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section id="map" class="section">
+        <div class="container">
+            <h2>Issues Map</h2>
+            <div id="mainMap" style="height: 500px; width: 100%; background: #f0f0f0; border-radius: 10px;"></div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="section">
+        <div class="container">
+            <h2>Your Dashboard</h2>
+            <div class="dashboard-content">
+                <p>Login to view your dashboard and track your civic contributions!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authority Section -->
+    <section id="authority" class="section">
+        <div class="container">
+            <h2>Authority Dashboard</h2>
+            <div class="authority-content">
+                <p>Authority features available after login.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authentication Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Login</h2>
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label>Email or Phone</label>
+                    <input type="text" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Register</h2>
+            <form onsubmit="register(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="registerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isAuthority"> I am a local authority
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">Register</button>
+            </form>
+            <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Global Variables
+        let currentUser = null;
+        let currentLocation = null;
+        let locationMap = null;
+        let mainMap = null;
+        let isRecording = false;
+        let recognition = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            const savedUser = localStorage.getItem('smartcitizen_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateAuthUI();
+            }
+
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'hi-IN';
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('voicePreview').innerHTML = 
+                        `<p><strong>Recorded:</strong> ${transcript}</p>`;
+                    translateAndAddToDescription(transcript);
+                };
+            }
+
+            setupPhotoHandler();
+            updateStats();
+        }
+
+        function showSection(sectionName) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => section.classList.remove('active'));
+
+            const targetSection = document.getElementById(sectionName);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            if (sectionName === 'map' && !mainMap) {
+                setTimeout(initializeMainMap, 100);
+            } else if (sectionName === 'report' && !locationMap) {
+                setTimeout(initializeLocationMap, 100);
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function showRegister() {
+            document.getElementById('registerModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function login(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            // Demo login
+            if (email === 'demo@smartcitizen.com' && password === 'demo123') {
+                currentUser = {
+                    id: 'DEMO_USER',
+                    name: 'Demo User',
+                    email: email,
+                    reputationPoints: 50,
+                    badges: [],
+                    isAuthority: false
+                };
+                localStorage.setItem('smartcitizen_user', JSON.stringify(currentUser));
+                updateAuthUI();
+                closeModal('loginModal');
+                showNotification('Welcome to SmartCitizen Demo!');
+            } else {
+                showNotification('Use demo@smartcitizen.com / demo123 for demo', 'warning');
+            }
+        }
+
+        function register(event) {
+            event.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            
+            currentUser = {
+                id: 'SC' + Date.now(),
+                name: name,
+                email: email,
+                reputationPoints: 0,
+                badges: [],
+                isAuthority: document.getElementById('isAuthority').checked
+            };
+            
+            localStorage.setItem('smartcitizen_user', JSON.stringify(currentUser));
+            updateAuthUI();
+            closeModal('registerModal');
+            showNotification('Registration successful! Welcome ' + name + '!');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('smartcitizen_user');
+            updateAuthUI();
+            showSection('home');
+            showNotification('Logged out successfully');
+        }
+
+        function updateAuthUI() {
+            const authButtons = document.getElementById('authButtons');
+            const userInfo = document.getElementById('userInfo');
+            const userGreeting = document.getElementById('userGreeting');
+            const authorityLink = document.getElementById('authorityLink');
+
+            if (currentUser) {
+                authButtons.style.display = 'none';
+                userInfo.style.display = 'flex';
+                userGreeting.textContent = `Hello, ${currentUser.name}`;
+                
+                if (currentUser.isAuthority) {
+                    authorityLink.style.display = 'block';
+                }
+            } else {
+                authButtons.style.display = 'flex';
+                userInfo.style.display = 'none';
+                authorityLink.style.display = 'none';
+            }
+        }
+
+        function setupPhotoHandler() {
+            const photoInput = document.getElementById('photoInput');
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('photoPreview').innerHTML = 
+                            `<img src="${e.target.result}" alt="Issue photo" style="max-width: 200px; border-radius: 8px;">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function toggleVoiceRecording() {
+            const voiceBtn = document.getElementById('voiceBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+
+            if (!isRecording && recognition) {
+                recognition.start();
+                voiceBtn.classList.add('voice-recording');
+                voiceStatus.textContent = 'Recording... Click to stop';
+                isRecording = true;
+            } else {
+                if (recognition) recognition.stop();
+                voiceBtn.classList.remove('voice-recording');
+                voiceStatus.textContent = 'Start Recording';
+                isRecording = false;
+            }
+        }
+
+        async function generateAIDescription() {
+            const btn = document.querySelector('.btn-ai');
+            btn.innerHTML = '<div class="loading"></div> Generating...';
+            
+            setTimeout(() => {
+                const category = document.getElementById('issueCategory').value;
+                const descriptions = {
+                    road: 'सड़क में गड्ढे हैं जो वाहनों की आवाजाही में बाधा डाल रहे हैं',
+                    water: 'पानी का रिसाव या नाली में रुकावट है',
+                    electricity: 'बिजली की खराबी है',
+                    garbage: 'कूड़े का संचय है',
+                    traffic: 'यातायात की समस्या है',
+                    other: 'नागरिक समस्या है जिसमें तत्काल ध्यान देने की आवश्यकता है'
+                };
+                
+                document.getElementById('issueDescription').value = descriptions[category] || descriptions.other;
+                btn.innerHTML = '<i class="fas fa-robot"></i> AI Auto-Description';
+                showNotification('AI description generated successfully!');
+            }, 1000);
+        }
+
+        async function translateAndAddToDescription(voiceText) {
+            const currentDescription = document.getElementById('issueDescription').value;
+            const newDescription = currentDescription ? 
+                currentDescription + '\n\nआवाज़ से: ' + voiceText :
+                'आवाज़ से: ' + voiceText;
+            document.getElementById('issueDescription').value = newDescription;
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        currentLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        
+                        document.getElementById('locationText').value = 
+                            `Lat: ${currentLocation.latitude.toFixed(6)}, Lng: ${currentLocation.longitude.toFixed(6)}`;
+                        
+                        showNotification('Location detected successfully');
+                        if (!locationMap) initializeLocationMap();
+                    },
+                    function(error) {
+                        showNotification('Error getting location: ' + error.message, 'error');
+                    }
+                );
+            } else {
+                showNotification('Geolocation not supported', 'error');
+            }
+        }
+
+        function initializeLocationMap() {
+            const lat = currentLocation ? currentLocation.latitude : 28.6139;
+            const lng = currentLocation ? currentLocation.longitude : 77.2090;
+
+            locationMap = L.map('locationMap').setView([lat, lng], 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(locationMap);
+
+            if (currentLocation) {
+                L.marker([lat, lng])
+                    .addTo(locationMap)
+                    .bindPopup('Your location')
+                    .openPopup();
+            }
+        }
+
+        function initializeMainMap() {
+            if (document.getElementById('mainMap') && !mainMap) {
+                mainMap = L.map('mainMap').setView([28.6139, 77.2090], 12);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(mainMap);
+
+                // Add sample markers
+                const sampleIssues = [
+                    { lat: 28.6139, lng: 77.2090, title: 'Road Issue', desc: 'Pothole on main road' },
+                    { lat: 28.6200, lng: 77.2100, title: 'Water Issue', desc: 'Drainage blockage' }
+                ];
+
+                sampleIssues.forEach(issue => {
+                    L.marker([issue.lat, issue.lng])
+                        .addTo(mainMap)
+                        .bindPopup(`<b>${issue.title}</b><br>${issue.desc}`);
+                });
+            }
+        }
+
+        function quickSubmit() {
+            if (!currentUser) {
+                showNotification('Please login first', 'warning');
+                showLogin();
+                return;
+            }
+
+            // Auto-fill form
+            const category = document.getElementById('issueCategory').value || 'other';
+            if (!category || category === '') {
+                document.getElementById('issueCategory').value = 'other';
+            }
+
+            if (!currentLocation) {
+                getCurrentLocation();
+                setTimeout(() => {
+                    if (currentLocation) proceedWithQuickSubmit();
+                }, 2000);
+            } else {
+                proceedWithQuickSubmit();
+            }
+        }
+
+        function proceedWithQuickSubmit() {
+            const category = document.getElementById('issueCategory').value;
+            const quickDescriptions = {
+                road: 'सड़क में समस्या है जिसे तुरंत ठीक करने की जरूरत है',
+                water: 'पानी या नाली की समस्या है',
+                electricity: 'बिजली की समस्या है',
+                garbage: 'कूड़े की समस्या है',
+                traffic: 'यातायात की समस्या है',
+                other: 'नागरिक समस्या है जिस पर ध्यान देना आवश्यक है'
+            };
+
+            document.getElementById('issueDescription').value = quickDescriptions[category] || quickDescriptions.other;
+            submitIssue();
+            showNotification('⚡ Quick submit completed in under 7 seconds!', 'success');
+        }
+
+        function submitIssue() {
+            if (!currentUser) {
+                showNotification('Please login to submit', 'warning');
+                return;
+            }
+
+            const category = document.getElementById('issueCategory').value;
+            const description = document.getElementById('issueDescription').value;
+            
+            if (!category || !description) {
+                showNotification('Please fill required fields', 'warning');
+                return;
+            }
+
+            // Simulate issue submission
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            const newIssue = {
+                id: 'ISSUE_' + Date.now(),
+                category: category,
+                description: description,
+                location: currentLocation,
+                reporterId: currentUser.id,
+                reporterName: currentUser.name,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            issues.push(newIssue);
+            localStorage.setItem('smartcitizen_issues', JSON.stringify(issues));
+
+            // Award points
+            currentUser.reputationPoints += 10;
+            localStorage.setItem('smartcitizen_user', JSON.stringify(currentUser));
+
+            // Clear form
+            document.getElementById('issueCategory').value = '';
+            document.getElementById('issueDescription').value = '';
+            document.getElementById('photoPreview').innerHTML = '';
+            document.getElementById('voicePreview').innerHTML = '';
+
+            showNotification('Issue submitted successfully! You earned 10 points.');
+            updateStats();
+        }
+
+        function updateStats() {
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            document.getElementById('totalReports').textContent = issues.length;
+            document.getElementById('resolvedReports').textContent = 
+                issues.filter(issue => issue.status === 'resolved').length;
+            document.getElementById('activeUsers').textContent = '1';
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

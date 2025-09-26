@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCitizen - AI Powered Civic Issue Reporting</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: linear-gradient(135deg, #2c5f2d 0%, #1e3a1e 100%);
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-brand i {
+            margin-right: 0.5rem;
+            color: #97b498;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: #97b498;
+        }
+
+        .nav-auth, .nav-user {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            margin: 3px 0;
+            transition: 0.3s;
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary, .btn-login, .btn-register, .btn-logout, .btn-submit, .btn-ai, .btn-quick {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+
+        .btn-secondary:hover {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-login, .btn-register {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-logout {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-submit {
+            background: #007bff;
+            color: white;
+            flex: 1;
+            font-size: 1.1rem;
+        }
+
+        .btn-ai {
+            background: #ff6b35;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
+        .btn-quick {
+            background: #17a2b8;
+            color: white;
+            flex: 1;
+            margin-right: 0.5rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+            padding: 120px 0 60px;
+            min-height: 100vh;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Home Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            color: #2c5f2d;
+            margin-bottom: 1rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            color: #777;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stats-container, .dashboard-stats, .authority-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card i {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            color: #2c5f2d;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Forms */
+        .report-container, .dashboard-content, .authority-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Photo Upload */
+        .photo-upload, .voice-input, .location-input {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .photo-upload input[type="file"] {
+            display: none;
+        }
+
+        .photo-upload button, .voice-input button, .location-input button {
+            padding: 0.75rem 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #photoPreview, #voicePreview {
+            margin-top: 1rem;
+        }
+
+        #photoPreview img {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        /* Voice Recording States */
+        .voice-recording {
+            background: #dc3545 !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Maps */
+        .map-filters {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .map-filters select {
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .map-filters button {
+            padding: 0.5rem 1rem;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Badge System */
+        .badge-showcase {
+            margin-bottom: 2rem;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .badge-item {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border-radius: 15px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        }
+
+        .badge-item i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-item span {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Issue Lists */
+        .issue-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .issue-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-verified {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .status-in-progress {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .status-resolved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .issue-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .issue-actions button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-approve, .btn-vote-yes {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-progress {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-resolve {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .btn-vote-no {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Voting Interface */
+        .voting-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 2px solid #e9ecef;
+        }
+
+        .voting-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .vote-results {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        /* Notifications */
+        .notification-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 3000;
+        }
+
+        .notification {
+            background: #4CAF50;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-menu {
+                position: fixed;
+                left: -100%;
+                top: 70px;
+                flex-direction: column;
+                background: #2c5f2d;
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                padding: 2rem 0;
+            }
+
+            .nav-menu.active {
+                left: 0;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats-container, .dashboard-stats, .authority-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .photo-upload, .voice-input, .location-input {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .issue-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .voting-buttons {
+                flex-direction: column;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+                padding: 1.5rem;
+            }
+
+            .section {
+                padding: 100px 0 40px;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-city"></i>
+                <span>SmartCitizen</span>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <a class="nav-link" onclick="showSection('home')">Home</a>
+                <a class="nav-link" onclick="showSection('report')">Report Issue</a>
+                <a class="nav-link" onclick="showSection('map')">Map</a>
+                <a class="nav-link" onclick="showSection('dashboard')">Dashboard</a>
+                <a class="nav-link" id="authorityLink" style="display: none;" onclick="showSection('authority')">Authority</a>
+                <div class="nav-auth" id="authButtons">
+                    <button class="btn-login" onclick="showLogin()">Login</button>
+                    <button class="btn-register" onclick="showRegister()">Register</button>
+                </div>
+                <div class="nav-user" id="userInfo" style="display: none;">
+                    <span id="userGreeting"></span>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section active">
+        <div class="container">
+            <div class="hero">
+                <h1>SmartCitizen</h1>
+                <p class="hero-subtitle">AI-Powered Civic Issue Reporting Platform</p>
+                <p class="hero-description">Report civic issues in your community with AI assistance. Get quick responses from authorities and earn rewards for active participation.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="showSection('report')">Report an Issue</button>
+                    <button class="btn-secondary" onclick="showSection('map')">View Issues Map</button>
+                </div>
+            </div>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 id="totalReports">0</h3>
+                    <p>Total Reports</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-circle"></i>
+                    <h3 id="resolvedReports">0</h3>
+                    <p>Resolved</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h3 id="activeUsers">1</h3>
+                    <p>Active Citizens</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Report Issue Section -->
+    <section id="report" class="section">
+        <div class="container">
+            <h2>Report a Civic Issue</h2>
+            <div class="report-container">
+                <div class="report-form">
+                    <div class="form-group">
+                        <label>Issue Category</label>
+                        <select id="issueCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="road">Road & Infrastructure</option>
+                            <option value="water">Water & Drainage</option>
+                            <option value="electricity">Electricity</option>
+                            <option value="garbage">Garbage & Sanitation</option>
+                            <option value="traffic">Traffic & Parking</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Add Photo of Issue</label>
+                        <div class="photo-upload">
+                            <input type="file" id="photoInput" accept="image/*" capture="environment">
+                            <button type="button" onclick="document.getElementById('photoInput').click()">
+                                <i class="fas fa-camera"></i> Take Photo
+                            </button>
+                            <div id="photoPreview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Voice Description (Optional)</label>
+                        <div class="voice-input">
+                            <button type="button" id="voiceBtn" onclick="toggleVoiceRecording()">
+                                <i class="fas fa-microphone"></i> <span id="voiceStatus">Start Recording</span>
+                            </button>
+                            <div id="voicePreview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Issue Description</label>
+                        <textarea id="issueDescription" placeholder="Describe the issue or let AI generate description from photo/voice..." rows="4"></textarea>
+                        <button type="button" class="btn-ai" onclick="generateAIDescription()">
+                            <i class="fas fa-robot"></i> AI Auto-Description
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div class="location-input">
+                            <input type="text" id="locationText" placeholder="Location will be auto-detected..." readonly>
+                            <button type="button" onclick="getCurrentLocation()">
+                                <i class="fas fa-location-arrow"></i> Get Location
+                            </button>
+                        </div>
+                        <div id="locationMap" style="height: 200px; margin-top: 10px;"></div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button type="button" class="btn-quick" onclick="quickSubmit()">
+                            <i class="fas fa-bolt"></i> Quick Submit (Auto-fill)
+                        </button>
+                        <button type="button" class="btn-submit" onclick="submitIssue()">
+                            <i class="fas fa-paper-plane"></i> Submit Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section id="map" class="section">
+        <div class="container">
+            <h2>Issues Map</h2>
+            <div class="map-filters">
+                <select id="mapFilter">
+                    <option value="all">All Issues</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+                <button onclick="refreshMap()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div id="mainMap" style="height: 500px; width: 100%;"></div>
+        </div>
+    </section>
+
+    <!-- User Dashboard -->
+    <section id="dashboard" class="section">
+        <div class="container">
+            <h2>Your Dashboard</h2>
+            <div class="dashboard-content">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-file-alt"></i>
+                        <h3 id="userReports">0</h3>
+                        <p>Your Reports</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-star"></i>
+                        <h3 id="userPoints">0</h3>
+                        <p>Reputation Points</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-award"></i>
+                        <h3 id="userBadges">0</h3>
+                        <p>Badges Earned</p>
+                    </div>
+                </div>
+
+                <div class="badge-showcase" id="badgeShowcase">
+                    <h3>Your Badges</h3>
+                    <div class="badges-grid" id="badgesContainer">
+                        <!-- Badges will be dynamically added here -->
+                    </div>
+                </div>
+
+                <div class="recent-reports">
+                    <h3>Your Recent Reports</h3>
+                    <div id="userReportsList">
+                        <!-- User reports will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authority Dashboard -->
+    <section id="authority" class="section">
+        <div class="container">
+            <h2>Authority Dashboard</h2>
+            <div class="authority-content">
+                <div class="authority-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3 id="pendingIssues">0</h3>
+                        <p>Pending Issues</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-cog"></i>
+                        <h3 id="inProgressIssues">0</h3>
+                        <p>In Progress</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-check"></i>
+                        <h3 id="resolvedIssues">0</h3>
+                        <p>Resolved</p>
+                    </div>
+                </div>
+
+                <div class="issues-list">
+                    <h3>Verified Issues Requiring Action</h3>
+                    <div id="authorityIssuesList">
+                        <!-- Authority issues will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authentication Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Login</h2>
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label>Email or Phone</label>
+                    <input type="text" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+            <p><small><strong>Demo:</strong> authority@demo.com / demo123</small></p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Register</h2>
+            <form onsubmit="register(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="registerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isAuthority"> I am a local authority
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">Register</button>
+            </form>
+            <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+        </div>
+    </div>
+
+    <!-- Issue Detail Modal -->
+    <div id="issueModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('issueModal')">&times;</span>
+            <div id="issueModalContent">
+                <!-- Issue details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Global Variables
+        let currentUser = null;
+        let currentLocation = null;
+        let locationMap = null;
+        let mainMap = null;
+        let isRecording = false;
+        let recognition = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            
+            // Initialize demo data if no data exists
+            if (!localStorage.getItem('smartcitizen_users')) {
+                generateDemoData();
+            }
+        });
+
+        function initializeApp() {
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('smartcitizen_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateAuthUI();
+            }
+
+            // Initialize speech recognition if available
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'hi-IN'; // Hindi language
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('voicePreview').innerHTML = 
+                        `<p><strong>Recorded:</strong> ${transcript}</p>`;
+                    // Auto-translate and add to description
+                    translateAndAddToDescription(transcript);
+                };
+                
+                recognition.onerror = function(event) {
+                    showNotification('Voice recognition error: ' + event.error, 'error');
+                };
+            }
+
+            // Initialize navigation
+            initializeNavigation();
+            
+            // Load initial data
+            updateStats();
+            
+            // Set up photo input handler
+            setupPhotoHandler();
+            
+            // Initialize maps when sections are shown
+            setupMapInitialization();
+        }
+
+        // Navigation Functions
+        function initializeNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetSection = this.getAttribute('onclick').match(/'(\w+)'/)[1];
+                    showSection(targetSection);
+                });
+            });
+        }
+
+        function showSection(sectionName) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show target section
+            const targetSection = document.getElementById(sectionName);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            // Initialize maps if needed
+            if (sectionName === 'map' && !mainMap) {
+                setTimeout(initializeMainMap, 100);
+            } else if (sectionName === 'report' && !locationMap) {
+                setTimeout(initializeLocationMap, 100);
+            }
+
+            // Load section-specific data
+            if (sectionName === 'dashboard' && currentUser) {
+                loadUserDashboard();
+            } else if (sectionName === 'authority' && currentUser && currentUser.isAuthority) {
+                loadAuthorityDashboard();
+            }
+
+            // Close mobile menu
+            const navMenu = document.getElementById('navMenu');
+            navMenu.classList.remove('active');
+        }
+
+        function toggleMenu() {
+            const navMenu = document.getElementById('navMenu');
+            navMenu.classList.toggle('active');
+        }
+
+        // Authentication Functions
+        function showLogin() {
+            closeModal('registerModal');
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function showRegister() {
+            closeModal('loginModal');
+            document.getElementById('registerModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function login(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            // Simple demo authentication - in real app, this would be server-side
+            const users = JSON.parse(localStorage.getItem('smartcitizen_users') || '[]');
+            const user = users.find(u => (u.email === email || u.phone === email) && u.password === password);
+
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('smartcitizen_user', JSON.stringify(user));
+                updateAuthUI();
+                closeModal('loginModal');
+                showNotification('Welcome back, ' + user.name + '!');
+            } else {
+                showNotification('Invalid credentials. Try: authority@demo.com / demo123', 'error');
+            }
+        }
+
+        function register(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const phone = document.getElementById('registerPhone').value;
+            const password = document.getElementById('registerPassword').value;
+            const isAuthority = document.getElementById('isAuthority').checked;
+
+            // Generate unique ID
+            const userId = 'SC' + Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+            const newUser = {
+                id: userId,
+                name: name,
+                email: email,
+                phone: phone,
+                password: password, // In real app, this would be hashed
+                isAuthority: isAuthority,
+                reputationPoints: 0,
+                badges: [],
+                joinDate: new Date().toISOString()
+            };
+
+            // Save to localStorage (in real app, this would be server-side)
+            const users = JSON.parse(localStorage.getItem('smartcitizen_users') || '[]');
+            
+            // Check if user already exists
+            if (users.some(u => u.email === email || u.phone === phone)) {
+                showNotification('User with this email or phone already exists', 'error');
+                return;
+            }
+
+            users.push(newUser);
+            localStorage.setItem('smartcitizen_users', JSON.stringify(users));
+            
+            currentUser = newUser;
+            localStorage.setItem('smartcitizen_user', JSON.stringify(newUser));
+            
+            updateAuthUI();
+            closeModal('registerModal');
+            showNotification('Registration successful! Welcome to SmartCitizen, ' + name + '!');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('smartcitizen_user');
+            updateAuthUI();
+            showSection('home');
+            showNotification('Logged out successfully');
+        }
+
+        function updateAuthUI() {
+            const authButtons = document.getElementById('authButtons');
+            const userInfo = document.getElementById('userInfo');
+            const userGreeting = document.getElementById('userGreeting');
+            const authorityLink = document.getElementById('authorityLink');
+
+            if (currentUser) {
+                authButtons.style.display = 'none';
+                userInfo.style.display = 'flex';
+                userGreeting.textContent = `Hello, ${currentUser.name}`;
+                
+                // Show authority link if user is authority
+                if (currentUser.isAuthority) {
+                    authorityLink.style.display = 'block';
+                } else {
+                    authorityLink.style.display = 'none';
+                }
+            } else {
+                authButtons.style.display = 'flex';
+                userInfo.style.display = 'none';
+                authorityLink.style.display = 'none';
+            }
+        }
+
+        // Photo Handling
+        function setupPhotoHandler() {
+            const photoInput = document.getElementById('photoInput');
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const photoPreview = document.getElementById('photoPreview');
+                        photoPreview.innerHTML = `<img src="${e.target.result}" alt="Issue photo">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Voice Recording Functions
+        function toggleVoiceRecording() {
+            const voiceBtn = document.getElementById('voiceBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+
+            if (!isRecording) {
+                startVoiceRecording();
+                voiceBtn.classList.add('voice-recording');
+                voiceStatus.textContent = 'Recording... Click to stop';
+                isRecording = true;
+            } else {
+                stopVoiceRecording();
+                voiceBtn.classList.remove('voice-recording');
+                voiceStatus.textContent = 'Start Recording';
+                isRecording = false;
+            }
+        }
+
+        function startVoiceRecording() {
+            if (recognition) {
+                recognition.start();
+            } else {
+                // Fallback for browsers without speech recognition
+                showNotification('Speech recognition not supported in this browser', 'warning');
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (recognition) {
+                recognition.stop();
+            }
+        }
+
+        // AI Description Generation
+        async function generateAIDescription() {
+            const btn = document.querySelector('.btn-ai');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loading"></div> Generating...';
+            btn.disabled = true;
+
+            try {
+                // Simulate AI processing (in real app, this would call actual AI service)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const category = document.getElementById('issueCategory').value;
+                const photoPreview = document.getElementById('photoPreview').innerHTML;
+                const voicePreview = document.getElementById('voicePreview').innerHTML;
+                
+                let description = generateMockAIDescription(category, photoPreview, voicePreview);
+                
+                // Translate to Hindi (mock translation)
+                const hindiDescription = await mockTranslateToHindi(description);
+                
+                document.getElementById('issueDescription').value = hindiDescription;
+                showNotification('AI description generated successfully!');
+                
+            } catch (error) {
+                showNotification('Failed to generate AI description', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function generateMockAIDescription(category, hasPhoto, hasVoice) {
+            const descriptions = {
+                road: 'Road damage with potholes affecting vehicle movement',
+                water: 'Water leakage or drainage blockage requiring immediate attention',
+                electricity: 'Electrical fault or power outage in the area',
+                garbage: 'Garbage accumulation or improper waste disposal',
+                traffic: 'Traffic congestion or parking violation',
+                other: 'Civic issue requiring local authority intervention'
+            };
+            
+            let baseDescription = descriptions[category] || descriptions.other;
+            
+            if (hasPhoto) {
+                baseDescription += '. Photo evidence attached showing the current situation';
+            }
+            
+            if (hasVoice) {
+                baseDescription += '. Additional voice description provided by the reporter';
+            }
+            
+            return baseDescription;
+        }
+
+        async function mockTranslateToHindi(text) {
+            // Mock Hindi translation (in real app, use Google Translate API or similar)
+            const translations = {
+                'Road damage with potholes affecting vehicle movement': 'सड़क में गड्ढे हैं जो वाहनों की आवाजाही में बाधा डाल रहे हैं',
+                'Water leakage or drainage blockage requiring immediate attention': 'पानी का रिसाव या नाली में रुकावट है जिस पर तुरंत ध्यान देने की जरूरत है',
+                'Electrical fault or power outage in the area': 'क्षेत्र में बिजली की खराबी या बिजली कटौती है',
+                'Garbage accumulation or improper waste disposal': 'कूड़े का संचय या अनुचित कचरा निपटान',
+                'Traffic congestion or parking violation': 'यातायात जाम या पार्किंग का उल्लंघन',
+                'Civic issue requiring local authority intervention': 'नागरिक समस्या जिसमें स्थानीय प्राधिकरण के हस्तक्षेप की आवश्यकता है'
+            };
+            
+            return translations[text.split('.')[0]] || 'नागरिक समस्या की रिपोर्ट';
+        }
+
+        async function translateAndAddToDescription(voiceText) {
+            const hindiTranslation = await mockTranslateToHindi(voiceText);
+            const currentDescription = document.getElementById('issueDescription').value;
+            const newDescription = currentDescription ? 
+                currentDescription + '\n\nआवाज़ से: ' + hindiTranslation :
+                'आवाज़ से: ' + hindiTranslation;
+            document.getElementById('issueDescription').value = newDescription;
+        }
+
+        // Location Functions
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        currentLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        
+                        document.getElementById('locationText').value = 
+                            `Lat: ${currentLocation.latitude.toFixed(6)}, Lng: ${currentLocation.longitude.toFixed(6)}`;
+                        
+                        if (locationMap) {
+                            updateLocationMap();
+                        } else {
+                            initializeLocationMap();
+                        }
+                        
+                        showNotification('Location detected successfully');
+                    },
+                    function(error) {
+                        showNotification('Error getting location: ' + error.message, 'error');
+                    }
+                );
+            } else {
+                showNotification('Geolocation is not supported by this browser', 'error');
+            }
+        }
+
+        function initializeLocationMap() {
+            const mapElement = document.getElementById('locationMap');
+            if (!mapElement) return;
+
+            // Default to Delhi if no location
+            const lat = currentLocation ? currentLocation.latitude : 28.6139;
+            const lng = currentLocation ? currentLocation.longitude : 77.2090;
+
+            locationMap = L.map('locationMap').setView([lat, lng], 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(locationMap);
+
+            if (currentLocation) {
+                L.marker([lat, lng])
+                    .addTo(locationMap)
+                    .bindPopup('Your current location')
+                    .openPopup();
+            }
+        }
+
+        function updateLocationMap() {
+            if (locationMap && currentLocation) {
+                locationMap.setView([currentLocation.latitude, currentLocation.longitude], 15);
+                
+                // Clear existing markers
+                locationMap.eachLayer(function(layer) {
+                    if (layer instanceof L.Marker) {
+                        locationMap.removeLayer(layer);
+                    }
+                });
+                
+                // Add new marker
+                L.marker([currentLocation.latitude, currentLocation.longitude])
+                    .addTo(locationMap)
+                    .bindPopup('Your current location')
+                    .openPopup();
+            }
+        }
+
+        // Map Functions
+        function initializeMainMap() {
+            const mapElement = document.getElementById('mainMap');
+            if (!mapElement) return;
+
+            mainMap = L.map('mainMap').setView([28.6139, 77.2090], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(mainMap);
+
+            loadIssuesOnMap();
+        }
+
+        function loadIssuesOnMap() {
+            if (!mainMap) return;
+
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            
+            issues.forEach(issue => {
+                if (issue.location) {
+                    const markerColor = getStatusColor(issue.status);
+                    const marker = L.marker([issue.location.latitude, issue.location.longitude])
+                        .addTo(mainMap);
+                    
+                    const popupContent = `
+                        <div class="issue-popup">
+                            <h4>${issue.category}</h4>
+                            <p><strong>Status:</strong> <span class="issue-status status-${issue.status}">${issue.status}</span></p>
+                            <p><strong>Description:</strong> ${issue.description.substring(0, 100)}...</p>
+                            <p><strong>Reported by:</strong> ${issue.reporterName}</p>
+                            <p><strong>Date:</strong> ${new Date(issue.timestamp).toLocaleDateString()}</p>
+                            <div class="voting-section">
+                                <p><strong>Community Votes:</strong></p>
+                                <div class="vote-results">
+                                    <span>👍 ${issue.votes ? issue.votes.yes : 0}</span>
+                                    <span>👎 ${issue.votes ? issue.votes.no : 0}</span>
+                                </div>
+                                ${currentUser && !issue.votes?.voters?.includes(currentUser.id) ? 
+                                    `<div class="voting-buttons">
+                                        <button class="btn-vote-yes" onclick="voteOnIssue('${issue.id}', true)">Verify</button>
+                                        <button class="btn-vote-no" onclick="voteOnIssue('${issue.id}', false)">Report Fake</button>
+                                    </div>` : ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                    
+                    marker.bindPopup(popupContent);
+                }
+            });
+        }
+
+        function refreshMap() {
+            if (mainMap) {
+                // Clear existing markers
+                mainMap.eachLayer(function(layer) {
+                    if (layer instanceof L.Marker) {
+                        mainMap.removeLayer(layer);
+                    }
+                });
+                loadIssuesOnMap();
+            }
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'pending': return 'orange';
+                case 'in-progress': return 'blue';
+                case 'resolved': return 'green';
+                default: return 'red';
+            }
+        }
+
+        // Quick Submit for 7-second goal
+        function quickSubmit() {
+            if (!currentUser) {
+                showNotification('Please login to submit an issue', 'warning');
+                showLogin();
+                return;
+            }
+
+            // Auto-fill with smart defaults
+            const category = document.getElementById('issueCategory').value || 'other';
+            if (!category || category === '') {
+                document.getElementById('issueCategory').value = 'other';
+            }
+
+            // Get location if not already obtained
+            if (!currentLocation) {
+                getCurrentLocation();
+                setTimeout(() => {
+                    // Retry after location is obtained
+                    if (currentLocation) {
+                        proceedWithQuickSubmit();
+                    } else {
+                        showNotification('Location required for quick submit', 'warning');
+                    }
+                }, 2000);
+            } else {
+                proceedWithQuickSubmit();
+            }
+        }
+
+        function proceedWithQuickSubmit() {
+            const category = document.getElementById('issueCategory').value;
+            let description = document.getElementById('issueDescription').value;
+            
+            // Auto-generate description if empty
+            if (!description) {
+                const quickDescriptions = {
+                    road: 'सड़क में समस्या है जिसे तुरंत ठीक करने की जरूरत है',
+                    water: 'पानी या नाली की समस्या है',
+                    electricity: 'बिजली की समस्या है',
+                    garbage: 'कूड़े की समस्या है',
+                    traffic: 'यातायात की समस्या है',
+                    other: 'नागरिक समस्या है जिस पर ध्यान देना आवश्यक है'
+                };
+                description = quickDescriptions[category] || quickDescriptions.other;
+                document.getElementById('issueDescription').value = description;
+            }
+
+            // Submit immediately
+            submitIssue();
+            showNotification('⚡ Quick submit completed in under 7 seconds!', 'success');
+        }
+
+        // Issue Submission
+        function submitIssue() {
+            if (!currentUser) {
+                showNotification('Please login to submit an issue', 'warning');
+                showLogin();
+                return;
+            }
+
+            const category = document.getElementById('issueCategory').value;
+            const description = document.getElementById('issueDescription').value;
+            
+            if (!category || !description) {
+                showNotification('Please fill in all required fields', 'warning');
+                return;
+            }
+
+            if (!currentLocation) {
+                showNotification('Please get your location first', 'warning');
+                return;
+            }
+
+            const photoInput = document.getElementById('photoInput');
+            const photoFile = photoInput.files[0];
+            
+            const issue = {
+                id: 'ISSUE_' + Date.now().toString(36),
+                category: category,
+                description: description,
+                location: currentLocation,
+                reporterId: currentUser.id,
+                reporterName: currentUser.name,
+                timestamp: new Date().toISOString(),
+                status: 'pending',
+                votes: {
+                    yes: 0,
+                    no: 0,
+                    voters: []
+                },
+                photo: photoFile ? URL.createObjectURL(photoFile) : null
+            };
+
+            // Save issue
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            issues.push(issue);
+            localStorage.setItem('smartcitizen_issues', JSON.stringify(issues));
+
+            // Award points to user
+            currentUser.reputationPoints += 10;
+            awardBadgeIfEligible('reporter');
+            updateUserInStorage();
+
+            // Clear form
+            document.getElementById('issueCategory').value = '';
+            document.getElementById('issueDescription').value = '';
+            document.getElementById('photoPreview').innerHTML = '';
+            document.getElementById('voicePreview').innerHTML = '';
+            photoInput.value = '';
+
+            showNotification('Issue submitted successfully! You earned 10 reputation points.');
+            updateStats();
+        }
+
+        // Voting System
+        function voteOnIssue(issueId, isApproval) {
+            if (!currentUser) {
+                showNotification('Please login to vote', 'warning');
+                return;
+            }
+
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            const issueIndex = issues.findIndex(issue => issue.id === issueId);
+            
+            if (issueIndex === -1) {
+                showNotification('Issue not found', 'error');
+                return;
+            }
+
+            const issue = issues[issueIndex];
+            
+            // Check if user already voted
+            if (issue.votes.voters.includes(currentUser.id)) {
+                showNotification('You have already voted on this issue', 'warning');
+                return;
+            }
+
+            // Add vote
+            if (isApproval) {
+                issue.votes.yes++;
+            } else {
+                issue.votes.no++;
+            }
+            
+            issue.votes.voters.push(currentUser.id);
+
+            // Check if issue should be verified (e.g., 3+ yes votes)
+            if (issue.votes.yes >= 3 && issue.status === 'pending') {
+                issue.status = 'verified';
+                showNotification('Issue has been verified by the community!');
+            }
+
+            // Award points to voter
+            currentUser.reputationPoints += 2;
+            awardBadgeIfEligible('voter');
+            updateUserInStorage();
+
+            // Save updated issues
+            localStorage.setItem('smartcitizen_issues', JSON.stringify(issues));
+            
+            showNotification('Thank you for your vote! You earned 2 reputation points.');
+            refreshMap();
+        }
+
+        // Badge System
+        function awardBadgeIfEligible(type) {
+            const badgeTypes = {
+                reporter: { threshold: 1, name: 'First Reporter', icon: 'fas fa-flag' },
+                voter: { threshold: 5, name: 'Community Voter', icon: 'fas fa-vote-yea' },
+                active: { threshold: 50, name: 'Active Citizen', icon: 'fas fa-star' },
+                expert: { threshold: 100, name: 'Civic Expert', icon: 'fas fa-trophy' }
+            };
+
+            const badge = badgeTypes[type];
+            if (!badge) return;
+
+            const userIssues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]')
+                .filter(issue => issue.reporterId === currentUser.id);
+            
+            const shouldAward = type === 'reporter' ? userIssues.length >= badge.threshold :
+                              type === 'voter' ? currentUser.reputationPoints >= badge.threshold * 2 :
+                              currentUser.reputationPoints >= badge.threshold;
+
+            if (shouldAward && !currentUser.badges.some(b => b.type === type)) {
+                currentUser.badges.push({
+                    type: type,
+                    name: badge.name,
+                    icon: badge.icon,
+                    earnedDate: new Date().toISOString()
+                });
+                
+                showNotification(`🏆 Badge Unlocked: ${badge.name}!`, 'success');
+                updateUserInStorage();
+            }
+        }
+
+        function updateUserInStorage() {
+            localStorage.setItem('smartcitizen_user', JSON.stringify(currentUser));
+            
+            // Update user in users array
+            const users = JSON.parse(localStorage.getItem('smartcitizen_users') || '[]');
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('smartcitizen_users', JSON.stringify(users));
+            }
+        }
+
+        // Dashboard Functions
+        function loadUserDashboard() {
+            if (!currentUser) return;
+
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            const userIssues = issues.filter(issue => issue.reporterId === currentUser.id);
+
+            // Update stats
+            document.getElementById('userReports').textContent = userIssues.length;
+            document.getElementById('userPoints').textContent = currentUser.reputationPoints;
+            document.getElementById('userBadges').textContent = currentUser.badges.length;
+
+            // Display badges
+            const badgesContainer = document.getElementById('badgesContainer');
+            badgesContainer.innerHTML = '';
+            
+            currentUser.badges.forEach(badge => {
+                const badgeElement = document.createElement('div');
+                badgeElement.className = 'badge-item';
+                badgeElement.innerHTML = `
+                    <i class="${badge.icon}"></i>
+                    <span>${badge.name}</span>
+                `;
+                badgesContainer.appendChild(badgeElement);
+            });
+
+            // Display recent reports
+            const reportsList = document.getElementById('userReportsList');
+            reportsList.innerHTML = '';
+            
+            userIssues.slice(-5).reverse().forEach(issue => {
+                const issueElement = document.createElement('div');
+                issueElement.className = 'issue-item';
+                issueElement.innerHTML = `
+                    <div class="issue-header">
+                        <h4>${issue.category}</h4>
+                        <span class="issue-status status-${issue.status}">${issue.status}</span>
+                    </div>
+                    <p>${issue.description}</p>
+                    <p><small>Reported on: ${new Date(issue.timestamp).toLocaleString()}</small></p>
+                    <div class="vote-results">
+                        <span>👍 ${issue.votes.yes}</span>
+                        <span>👎 ${issue.votes.no}</span>
+                    </div>
+                `;
+                reportsList.appendChild(issueElement);
+            });
+        }
+
+        // Authority Dashboard
+        function loadAuthorityDashboard() {
+            if (!currentUser || !currentUser.isAuthority) return;
+
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            const verifiedIssues = issues.filter(issue => issue.votes.yes >= 3);
+
+            // Update stats
+            const pending = verifiedIssues.filter(issue => issue.status === 'verified' || issue.status === 'pending').length;
+            const inProgress = verifiedIssues.filter(issue => issue.status === 'in-progress').length;
+            const resolved = verifiedIssues.filter(issue => issue.status === 'resolved').length;
+
+            document.getElementById('pendingIssues').textContent = pending;
+            document.getElementById('inProgressIssues').textContent = inProgress;
+            document.getElementById('resolvedIssues').textContent = resolved;
+
+            // Display issues list
+            const issuesList = document.getElementById('authorityIssuesList');
+            issuesList.innerHTML = '';
+
+            verifiedIssues.forEach(issue => {
+                const issueElement = document.createElement('div');
+                issueElement.className = 'issue-item';
+                issueElement.innerHTML = `
+                    <div class="issue-header">
+                        <h4>${issue.category}</h4>
+                        <span class="issue-status status-${issue.status}">${issue.status}</span>
+                    </div>
+                    <p>${issue.description}</p>
+                    <p><strong>Location:</strong> ${issue.location.latitude.toFixed(4)}, ${issue.location.longitude.toFixed(4)}</p>
+                    <p><strong>Reported by:</strong> ${issue.reporterName}</p>
+                    <p><strong>Community Votes:</strong> 👍 ${issue.votes.yes} 👎 ${issue.votes.no}</p>
+                    <div class="issue-actions">
+                        ${issue.status === 'pending' || issue.status === 'verified' ? 
+                            `<button class="btn-progress" onclick="updateIssueStatus('${issue.id}', 'in-progress')">Mark In Progress</button>` : ''
+                        }
+                        ${issue.status === 'in-progress' ? 
+                            `<button class="btn-resolve" onclick="updateIssueStatus('${issue.id}', 'resolved')">Mark Resolved</button>` : ''
+                        }
+                    </div>
+                `;
+                issuesList.appendChild(issueElement);
+            });
+        }
+
+        function updateIssueStatus(issueId, newStatus) {
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            const issueIndex = issues.findIndex(issue => issue.id === issueId);
+            
+            if (issueIndex === -1) return;
+
+            issues[issueIndex].status = newStatus;
+            issues[issueIndex].lastUpdated = new Date().toISOString();
+            issues[issueIndex].updatedBy = currentUser.id;
+
+            localStorage.setItem('smartcitizen_issues', JSON.stringify(issues));
+
+            // Notify all users if resolved
+            if (newStatus === 'resolved') {
+                // In a real app, this would send actual notifications
+                showNotification('Issue has been marked as resolved. All users will be notified.');
+            }
+
+            loadAuthorityDashboard();
+            updateStats();
+            
+            if (mainMap) {
+                refreshMap();
+            }
+        }
+
+        // Utility Functions
+        function updateStats() {
+            const issues = JSON.parse(localStorage.getItem('smartcitizen_issues') || '[]');
+            const users = JSON.parse(localStorage.getItem('smartcitizen_users') || '[]');
+
+            document.getElementById('totalReports').textContent = issues.length;
+            document.getElementById('resolvedReports').textContent = 
+                issues.filter(issue => issue.status === 'resolved').length;
+            document.getElementById('activeUsers').textContent = users.length || 1;
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function setupMapInitialization() {
+            // Initialize maps when their sections become visible
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const target = mutation.target;
+                        if (target.classList.contains('active')) {
+                            if (target.id === 'map' && !mainMap) {
+                                setTimeout(initializeMainMap, 100);
+                            } else if (target.id === 'report' && !locationMap) {
+                                setTimeout(initializeLocationMap, 100);
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Observe all sections
+            document.querySelectorAll('.section').forEach(section => {
+                observer.observe(section, { attributes: true });
+            });
+        }
+
+        // Demo Data Generation (for testing)
+        function generateDemoData() {
+            // Create demo users
+            const demoUsers = [
+                {
+                    id: 'SC_DEMO_AUTH',
+                    name: 'Authority Demo',
+                    email: 'authority@demo.com',
+                    phone: '+919999999999',
+                    password: 'demo123',
+                    isAuthority: true,
+                    reputationPoints: 0,
+                    badges: [],
+                    joinDate: new Date().toISOString()
+                }
+            ];
+
+            localStorage.setItem('smartcitizen_users', JSON.stringify(demoUsers));
+
+            // Create demo issues
+            const demoIssues = [
+                {
+                    id: 'ISSUE_DEMO_1',
+                    category: 'road',
+                    description: 'सड़क में बड़े गड्ढे हैं जो यातायात में समस्या पैदा कर रहे हैं',
+                    location: { latitude: 28.6139, longitude: 77.2090 },
+                    reporterId: 'DEMO_USER_1',
+                    reporterName: 'Demo Citizen',
+                    timestamp: new Date(Date.now() - 86400000).toISOString(),
+                    status: 'pending',
+                    votes: { yes: 5, no: 0, voters: ['user1', 'user2', 'user3', 'user4', 'user5'] }
+                }
+            ];
+
+            localStorage.setItem('smartcitizen_issues', JSON.stringify(demoIssues));
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

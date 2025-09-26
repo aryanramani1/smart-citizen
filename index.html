@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCitizen - AI Powered Civic Issue Reporting</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-city"></i>
+                <span>SmartCitizen</span>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#report" class="nav-link">Report Issue</a>
+                <a href="#map" class="nav-link">Map</a>
+                <a href="#dashboard" class="nav-link">Dashboard</a>
+                <a href="#authority" class="nav-link" id="authorityLink" style="display: none;">Authority</a>
+                <div class="nav-auth" id="authButtons">
+                    <button class="btn-login" onclick="showLogin()">Login</button>
+                    <button class="btn-register" onclick="showRegister()">Register</button>
+                </div>
+                <div class="nav-user" id="userInfo" style="display: none;">
+                    <span id="userGreeting"></span>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section active">
+        <div class="container">
+            <div class="hero">
+                <h1>SmartCitizen</h1>
+                <p class="hero-subtitle">AI-Powered Civic Issue Reporting Platform</p>
+                <p class="hero-description">Report civic issues in your community with AI assistance. Get quick responses from authorities and earn rewards for active participation.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="showSection('report')">Report an Issue</button>
+                    <button class="btn-secondary" onclick="showSection('map')">View Issues Map</button>
+                </div>
+            </div>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 id="totalReports">0</h3>
+                    <p>Total Reports</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-circle"></i>
+                    <h3 id="resolvedReports">0</h3>
+                    <p>Resolved</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h3 id="activeUsers">0</h3>
+                    <p>Active Citizens</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Report Issue Section -->
+    <section id="report" class="section">
+        <div class="container">
+            <h2>Report a Civic Issue</h2>
+            <div class="report-container">
+                <div class="report-form">
+                    <div class="form-group">
+                        <label>Issue Category</label>
+                        <select id="issueCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="road">Road & Infrastructure</option>
+                            <option value="water">Water & Drainage</option>
+                            <option value="electricity">Electricity</option>
+                            <option value="garbage">Garbage & Sanitation</option>
+                            <option value="traffic">Traffic & Parking</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Add Photo of Issue</label>
+                        <div class="photo-upload">
+                            <input type="file" id="photoInput" accept="image/*" capture="environment">
+                            <button type="button" onclick="document.getElementById('photoInput').click()">
+                                <i class="fas fa-camera"></i> Take Photo
+                            </button>
+                            <div id="photoPreview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Voice Description (Optional)</label>
+                        <div class="voice-input">
+                            <button type="button" id="voiceBtn" onclick="toggleVoiceRecording()">
+                                <i class="fas fa-microphone"></i> <span id="voiceStatus">Start Recording</span>
+                            </button>
+                            <div id="voicePreview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Issue Description</label>
+                        <textarea id="issueDescription" placeholder="Describe the issue or let AI generate description from photo/voice..." rows="4"></textarea>
+                        <button type="button" class="btn-ai" onclick="generateAIDescription()">
+                            <i class="fas fa-robot"></i> AI Auto-Description
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div class="location-input">
+                            <input type="text" id="locationText" placeholder="Location will be auto-detected..." readonly>
+                            <button type="button" onclick="getCurrentLocation()">
+                                <i class="fas fa-location-arrow"></i> Get Location
+                            </button>
+                        </div>
+                        <div id="locationMap" style="height: 200px; margin-top: 10px;"></div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button type="button" class="btn-quick" onclick="quickSubmit()">
+                            <i class="fas fa-bolt"></i> Quick Submit (Auto-fill)
+                        </button>
+                        <button type="button" class="btn-submit" onclick="submitIssue()">
+                            <i class="fas fa-paper-plane"></i> Submit Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section id="map" class="section">
+        <div class="container">
+            <h2>Issues Map</h2>
+            <div class="map-filters">
+                <select id="mapFilter">
+                    <option value="all">All Issues</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+                <button onclick="refreshMap()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div id="mainMap" style="height: 500px; width: 100%;"></div>
+        </div>
+    </section>
+
+    <!-- User Dashboard -->
+    <section id="dashboard" class="section">
+        <div class="container">
+            <h2>Your Dashboard</h2>
+            <div class="dashboard-content">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-file-alt"></i>
+                        <h3 id="userReports">0</h3>
+                        <p>Your Reports</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-star"></i>
+                        <h3 id="userPoints">0</h3>
+                        <p>Reputation Points</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-award"></i>
+                        <h3 id="userBadges">0</h3>
+                        <p>Badges Earned</p>
+                    </div>
+                </div>
+
+                <div class="badge-showcase" id="badgeShowcase">
+                    <h3>Your Badges</h3>
+                    <div class="badges-grid" id="badgesContainer">
+                        <!-- Badges will be dynamically added here -->
+                    </div>
+                </div>
+
+                <div class="recent-reports">
+                    <h3>Your Recent Reports</h3>
+                    <div id="userReportsList">
+                        <!-- User reports will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authority Dashboard -->
+    <section id="authority" class="section">
+        <div class="container">
+            <h2>Authority Dashboard</h2>
+            <div class="authority-content">
+                <div class="authority-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3 id="pendingIssues">0</h3>
+                        <p>Pending Issues</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-cog"></i>
+                        <h3 id="inProgressIssues">0</h3>
+                        <p>In Progress</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-check"></i>
+                        <h3 id="resolvedIssues">0</h3>
+                        <p>Resolved</p>
+                    </div>
+                </div>
+
+                <div class="issues-list">
+                    <h3>Verified Issues Requiring Action</h3>
+                    <div id="authorityIssuesList">
+                        <!-- Authority issues will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authentication Modals -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Login</h2>
+            <p class="auth-subtext">Welcome back! Please enter your credentials to continue.</p>
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label>Email or Phone</label>
+                    <input type="text" id="loginEmail" placeholder="Enter email or phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+            <p class="policy-text">By logging in, you agree to our <a href="#" class="policy-link" onclick="showPrivacyPolicy()">Privacy Policy</a>.</p>
+            <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Register</h2>
+            <p class="auth-subtext">Create your SmartCitizen account to report and track civic issues.</p>
+            <form onsubmit="register(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="registerName" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="registerPhone" placeholder="+91XXXXXXXXXX" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="registerPassword" placeholder="Choose a strong password" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="isAuthority"> I am a local authority
+                    </label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="agreePrivacy"> I agree to the <a href="#" class="policy-link" onclick="showPrivacyPolicy()">Privacy Policy</a>
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">Register</button>
+            </form>
+            <p class="policy-text">We respect your privacy. Your data is used only to improve community services.</p>
+            <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+        </div>
+    </div>
+
+    <!-- Issue Detail Modal -->
+    <div id="issueModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('issueModal')">&times;</span>
+            <div id="issueModalContent">
+                <!-- Issue details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content modal-lg">
+            <span class="close" onclick="closeModal('privacyModal')">&times;</span>
+            <h2>Privacy Policy</h2>
+            <div class="privacy-content">
+                <p>Last updated: September 25, 2025</p>
+                <p>SmartCitizen collects limited information to help you report civic issues efficiently and to notify your community and local authorities about progress.</p>
+                <h3>What we collect</h3>
+                <ul>
+                    <li>Account info (name, email, phone) to verify your identity</li>
+                    <li>Issue data (photos, voice notes, descriptions)</li>
+                    <li>Location (only when you choose to share it for an issue)</li>
+                    <li>Usage data (votes, badges) to power community features</li>
+                </ul>
+                <h3>How we use your data</h3>
+                <ul>
+                    <li>To create and manage your account</li>
+                    <li>To share issue details with local authorities and nearby users</li>
+                    <li>To prevent spam and improve community verification</li>
+                    <li>To send status updates on issues you've reported or follow</li>
+                </ul>
+                <h3>Your choices</h3>
+                <ul>
+                    <li>You control whether to share location for each report</li>
+                    <li>You can edit or remove your reports stored locally</li>
+                    <li>You may request data export or deletion by contacting support</li>
+                </ul>
+                <h3>Data storage</h3>
+                <p>This demo stores data in your browser (LocalStorage). In production, data would be stored securely on servers with appropriate safeguards.</p>
+                <h3>Contact</h3>
+                <p>For privacy questions, email: privacy@smartcitizen.example</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
